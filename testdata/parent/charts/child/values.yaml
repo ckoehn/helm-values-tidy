@@ -1,0 +1,4 @@
+port: 5432
+user: admin
+global:
+  storageClass: standard

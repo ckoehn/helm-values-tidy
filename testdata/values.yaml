@@ -1,0 +1,21 @@
+replicaCount: 3            # changed
+image:
+  repository: nginx        # redundant
+  tag: "1.25"              # redundant
+  pullPolicy: Always       # changed
+  pulPolicy: Always        # unknown (typo)
+podAnnotations:
+  example.com/foo: bar     # free-form, ok
+ports: [80, 443]           # redundant (list)
+extra:
+  anything: goes           # null default, ok
+global:
+  region: eu               # redundant
+  storageClass: fast       # changed (subchart global)
+db:
+  enabled: true            # changed
+  port: 5433               # redundant (parent override)
+  user: admin              # redundant (subchart default)
+  password: secret         # unknown
+legacyKey: 1               # unknown
+resources: null            # null removes default, skipped

@@ -1,0 +1,16 @@
+replicaCount: 1
+image:
+  repository: nginx
+  tag: "1.25"
+  pullPolicy: IfNotPresent
+podAnnotations: {}
+resources: {}
+ports:
+  - 80
+  - 443
+extra: null
+global:
+  region: eu
+db:
+  enabled: false
+  port: 5433
