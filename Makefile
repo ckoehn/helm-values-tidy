@@ -7,8 +7,15 @@ GO      ?= go
 GOLANGCI_LINT_VERSION ?= v2.15.0
 GOLANGCI_LINT ?= $(GO) run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
 
-# Remote chart used by `make demo-remote`.
-REMOTE_CHART ?= oci://registry-1.docker.io/bitnamicharts/nginx
+# Extra flags for `make demo` (see testdata/values.yaml).
+DEMO_FLAGS ?= --free-form nodeSelector --free-form '*.labels'
+
+# Remote chart used by `make demo-remote`. The version is pinned so the
+# expected results in testdata/nginx-values.yaml stay valid.
+REMOTE_CHART   ?= oci://registry-1.docker.io/bitnamicharts/nginx
+REMOTE_VERSION ?= 25.2.16
+REMOTE_VALUES  ?= testdata/nginx-values.yaml
+REMOTE_FLAGS   ?= --free-form service.ports
 
 .DEFAULT_GOAL := help
 
@@ -56,11 +63,11 @@ check: vet lint test ## Run vet, lint and tests (use before committing)
 
 .PHONY: demo
 demo: ## Run against the local test chart
-	$(GO) run . -f testdata/values.yaml testdata/parent
+	$(GO) run . -f testdata/values.yaml $(DEMO_FLAGS) testdata/parent
 
 .PHONY: demo-remote
 demo-remote: ## Run against a remote OCI chart with the test values (needs network)
-	$(GO) run . -f testdata/values.yaml $(REMOTE_CHART)
+	$(GO) run . -f $(REMOTE_VALUES) --version $(REMOTE_VERSION) $(REMOTE_FLAGS) $(REMOTE_CHART)
 
 .PHONY: clean
 clean: ## Remove build artifacts

@@ -1,4 +1,6 @@
 port: 5432
 user: admin
+labels:
+  app: child
 global:
   storageClass: standard

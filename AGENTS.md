@@ -11,7 +11,7 @@ against a chart's effective defaults and reports:
 - **Unknown** – keys the chart doesn't define
 
 ```
-helm-values-tidy [-f values.yaml ...] [--version V] [--repo URL] [-o text|json] CHART
+helm-values-tidy [-f values.yaml ...] [--version V] [--repo URL] [-o text|json] [--free-form PATH ...] CHART
 ```
 
 `CHART` can be a local directory, `.tgz`, `repo/name`, URL or `oci://…`.
@@ -20,13 +20,14 @@ helm-values-tidy [-f values.yaml ...] [--version V] [--repo URL] [-o text|json] 
 
 | Path | Purpose |
 | --- | --- |
-| `main.go` | Flag parsing (stdlib `flag`), merging `-f` files, wiring |
+| `main.go` | Flag parsing (`spf13/pflag`, already a Helm dependency: `-x` short, `--long` long), merging `-f` files, wiring |
 | `internal/chartload` | Resolve and load a chart via the Helm v3 SDK (`action.ChartPathOptions.LocateChart`, `loader.Load`) |
 | `internal/defaults` | Build the effective default tree, including subcharts and globals |
 | `internal/analyze` | Recursive comparison producing sorted `Finding`s |
 | `internal/report` | Text and JSON rendering |
 | `testdata/parent` | Test chart with an aliased subchart (`child` as `db`) |
 | `testdata/values.yaml` | Values exercising every rule; comments mark expected results |
+| `testdata/nginx-values.yaml` | Values for `make demo-remote` (bitnami/nginx at `REMOTE_VERSION`); comments mark expected results |
 
 ## Commands
 
@@ -34,7 +35,12 @@ Use the Makefile (`make help` lists everything):
 
 - `make check` – vet, golangci-lint, tests and gofmt check; run before finishing a change
 - `make test` / `make cover`
-- `make demo` – run against `testdata/parent`; output should match the comments in `testdata/values.yaml`
+- `make demo` – run against `testdata/parent` with `DEMO_FLAGS` (`--free-form`
+  paths); output should match the comments in `testdata/values.yaml`
+- `make demo-remote` – run `testdata/nginx-values.yaml` against bitnami/nginx
+  pinned to `REMOTE_VERSION` (needs network); output should match that file's
+  comments. If you bump the version, re-check the comments and the README
+  "Example" section, which shows this output.
 - `make build` – binary in `bin/`
 
 ## Comparison rules (keep these stable)
@@ -42,6 +48,9 @@ Use the Makefile (`make help` lists everything):
 - Key missing from defaults → Unknown, **except** below a default that is an
   empty map `{}` or `null` (free-form maps like `podAnnotations`) → ignored.
 - Both maps → recurse. Empty user map over empty default map → Redundant.
+- Paths given with `--free-form` (`analyze.Options.FreeForm`; same syntax as
+  finding paths, `*` matches one key) behave like an empty default map at and
+  below them: never Unknown, but Redundant is still reported.
 - User value `null` → ignored (Helm's "remove default" idiom).
 - Otherwise `reflect.DeepEqual`; lists compare as a whole, order matters.
 - Type mismatch (map vs scalar) → not reported.
@@ -62,5 +71,8 @@ Use the Makefile (`make help` lists everything):
 - Behaviour changes need a case in `internal/analyze/analyze_test.go` (table
   test) or `internal/defaults/defaults_test.go`, and `testdata/values.yaml`
   comments updated if the demo output changes.
+- User-visible changes (flags, comparison rules, output) get an entry under
+  `## [Unreleased]` in `CHANGELOG.md` (Keep a Changelog sections: Added,
+  Changed, Fixed, Removed). On release, rename it to the version and date.
 - Match existing style: small packages, doc comments on exported identifiers,
   no extra dependencies without good reason.

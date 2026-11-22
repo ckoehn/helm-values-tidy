@@ -4,11 +4,10 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"os"
-	"strings"
 
+	flag "github.com/spf13/pflag"
 	"helm.sh/helm/v3/pkg/chartutil"
 
 	"github.com/ckoehn/helm-values-tidy/internal/analyze"
@@ -16,11 +15,6 @@ import (
 	"github.com/ckoehn/helm-values-tidy/internal/defaults"
 	"github.com/ckoehn/helm-values-tidy/internal/report"
 )
-
-type stringSlice []string
-
-func (s *stringSlice) String() string     { return strings.Join(*s, ",") }
-func (s *stringSlice) Set(v string) error { *s = append(*s, v); return nil }
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
@@ -31,23 +25,24 @@ func main() {
 
 func run(args []string) error {
 	fs := flag.NewFlagSet("helm-values-tidy", flag.ContinueOnError)
+	fs.SortFlags = false
 	fs.Usage = func() {
-		_, _ = fmt.Fprint(fs.Output(), "Usage: helm-values-tidy [flags] CHART\n\n"+
+		_, _ = fmt.Fprint(os.Stderr, "Usage: helm-values-tidy [flags] CHART\n\n"+
 			"CHART is a local directory, a .tgz, repo/name, a URL or oci://...\n\nFlags:\n")
 		fs.PrintDefaults()
 	}
 	var (
-		valueFiles stringSlice
+		valueFiles []string
 		version    string
 		repoURL    string
 		output     string
+		freeForm   []string
 	)
-	fs.Var(&valueFiles, "f", "values file (repeatable, merged in order)")
-	fs.Var(&valueFiles, "values", "values file (repeatable, merged in order)")
+	fs.StringArrayVarP(&valueFiles, "values", "f", nil, "values `file` (repeatable, merged in order)")
 	fs.StringVar(&version, "version", "", "chart version constraint")
-	fs.StringVar(&repoURL, "repo", "", "chart repository URL")
-	fs.StringVar(&output, "o", "text", "output format: text or json")
-	fs.StringVar(&output, "output", "text", "output format: text or json")
+	fs.StringVar(&repoURL, "repo", "", "chart repository `URL`")
+	fs.StringVarP(&output, "output", "o", "text", "output `format`: text or json")
+	fs.StringArrayVar(&freeForm, "free-form", nil, "treat `PATH` as a free-form map: keys at or below it are never unknown\n(repeatable, * matches one key, e.g. '*.labels')")
 
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -65,6 +60,10 @@ func run(args []string) error {
 	if output != "text" && output != "json" {
 		return fmt.Errorf("unknown output format %q", output)
 	}
+	opts := analyze.Options{FreeForm: freeForm}
+	if err := opts.Validate(); err != nil {
+		return err
+	}
 
 	user := map[string]any{}
 	for _, f := range valueFiles {
@@ -80,7 +79,11 @@ func run(args []string) error {
 		return err
 	}
 
-	r := report.New(c.Name()+"@"+c.Metadata.Version, analyze.Analyze(user, defaults.Build(c)))
+	findings, err := analyze.Analyze(user, defaults.Build(c), opts)
+	if err != nil {
+		return err
+	}
+	r := report.New(c.Name()+"@"+c.Metadata.Version, findings)
 	if output == "json" {
 		return report.WriteJSON(os.Stdout, r)
 	}

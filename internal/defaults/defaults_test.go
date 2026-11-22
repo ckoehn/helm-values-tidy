@@ -24,6 +24,7 @@ func TestBuild(t *testing.T) {
 		{"db.enabled", false},               // parent-only key
 		{"global.region", "eu"},             // parent global
 		{"global.storageClass", "standard"}, // subchart global
+		{"db.labels.app", "child"},          // subchart map default under alias
 	}
 	for _, tt := range tests {
 		got, err := d.PathValue(tt.path)
@@ -38,6 +39,9 @@ func TestBuild(t *testing.T) {
 
 	if _, ok := d["child"]; ok {
 		t.Error("aliased subchart should not appear under its chart name")
+	}
+	if ns, _ := d["nodeSelector"].(map[string]any); ns["kubernetes.io/os"] != "linux" {
+		t.Errorf("nodeSelector = %v, want kubernetes.io/os: linux", d["nodeSelector"])
 	}
 	if _, ok := d["extra"]; !ok {
 		t.Error("null default key should be kept")

@@ -4,6 +4,8 @@ image:
   tag: "1.25"
   pullPolicy: IfNotPresent
 podAnnotations: {}
+nodeSelector:
+  kubernetes.io/os: linux
 resources: {}
 ports:
   - 80

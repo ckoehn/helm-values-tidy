@@ -1,3 +1,4 @@
+# `make demo` runs with: --free-form nodeSelector --free-form '*.labels'
 replicaCount: 3            # changed
 image:
   repository: nginx        # redundant
@@ -6,6 +7,9 @@ image:
   pulPolicy: Always        # unknown (typo)
 podAnnotations:
   example.com/foo: bar     # free-form, ok
+nodeSelector:
+  kubernetes.io/os: linux  # redundant (still reported under --free-form)
+  disktype: ssd            # free-form via --free-form nodeSelector, ok
 ports: [80, 443]           # redundant (list)
 extra:
   anything: goes           # null default, ok
@@ -17,5 +21,8 @@ db:
   port: 5433               # redundant (parent override)
   user: admin              # redundant (subchart default)
   password: secret         # unknown
+  labels:
+    app: child             # redundant
+    team: data             # free-form via --free-form '*.labels', ok
 legacyKey: 1               # unknown
 resources: null            # null removes default, skipped

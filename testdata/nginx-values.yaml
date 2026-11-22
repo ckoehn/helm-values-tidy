@@ -1,0 +1,22 @@
+# Values for `make demo-remote` (bitnami/nginx, pinned via REMOTE_VERSION).
+# `make demo-remote` runs with: --free-form service.ports
+replicaCount: 2              # changed
+image:
+  repository: bitnami/nginx  # redundant
+  pullPolicy: Always         # changed
+containerPorts:
+  http: 8080                 # redundant
+podLabels:
+  team: web                  # free-form ({} default), ok
+nodeSelector:
+  disktype: ssd              # free-form ({} default), ok
+livenessProbe:
+  periodSeconds: 10          # redundant
+readinessProbe:
+  peroidSeconds: 5           # unknown (typo)
+service:
+  type: LoadBalancer         # redundant
+  ports:
+    http: 80                 # redundant (still reported under --free-form)
+    metrics: 9113            # free-form via --free-form service.ports, ok
+legacyKey: 1                 # unknown

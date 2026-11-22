@@ -3,6 +3,7 @@ module github.com/ckoehn/helm-values-tidy
 go 1.27.4
 
 require (
+	github.com/spf13/pflag v1.0.10
 	helm.sh/helm/v3 v3.22.1
 	sigs.k8s.io/yaml v1.6.0
 )
@@ -82,7 +83,6 @@ require (
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/spf13/cobra v1.10.2 // indirect
-	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
