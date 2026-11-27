@@ -7,6 +7,11 @@ GO      ?= go
 GOLANGCI_LINT_VERSION ?= v2.15.0
 GOLANGCI_LINT ?= $(GO) run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
 
+# GoReleaser for `make snapshot` / `make release-check`. Keep in sync with
+# the version in .github/workflows/release.yml.
+GORELEASER_VERSION ?= v2.20.3
+GORELEASER ?= $(GO) run github.com/goreleaser/goreleaser/v2@$(GORELEASER_VERSION)
+
 # Extra flags for `make demo` (see testdata/values.yaml).
 DEMO_FLAGS ?= --free-form nodeSelector --free-form '*.labels'
 
@@ -21,7 +26,7 @@ REMOTE_FLAGS   ?= --free-form service.ports
 
 .PHONY: help
 help: ## Show this help
-	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 .PHONY: build
 build: ## Build the binary into ./bin
@@ -69,6 +74,19 @@ demo: ## Run against the local test chart
 demo-remote: ## Run against a remote OCI chart with the test values (needs network)
 	$(GO) run . -f $(REMOTE_VALUES) --version $(REMOTE_VERSION) $(REMOTE_FLAGS) $(REMOTE_CHART)
 
+.PHONY: snapshot
+snapshot: ## Build release archives locally into ./dist (GoReleaser dry run)
+	$(GORELEASER) release --snapshot --clean
+
+.PHONY: release-check
+release-check: ## Validate .goreleaser.yaml
+	$(GORELEASER) check
+
+.PHONY: release-notes
+release-notes: ## Print the release notes for VERSION from CHANGELOG.md
+	@test -n "$(VERSION)" || (echo "usage: make release-notes VERSION=X.Y.Z"; exit 1)
+	@scripts/release-notes.sh $(VERSION)
+
 .PHONY: clean
 clean: ## Remove build artifacts
-	rm -rf $(BIN_DIR)
+	rm -rf $(BIN_DIR) dist

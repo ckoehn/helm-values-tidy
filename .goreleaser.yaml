@@ -1,0 +1,49 @@
+# GoReleaser config for the prebuilt binaries attached to GitHub releases.
+# Validate with `goreleaser check`; try locally with
+# `goreleaser release --snapshot --clean` (output in dist/).
+version: 2
+
+project_name: helm-values-tidy
+
+builds:
+  - id: helm-values-tidy
+    main: .
+    binary: helm-values-tidy
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    flags:
+      - -trimpath
+    ldflags:
+      # main.version matches what `go install ...@vX.Y.Z` reports.
+      - -s -w -X main.version=v{{ .Version }}
+    # Reproducible builds: file times come from the commit, not the clock.
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+      - CHANGELOG.md
+
+checksum:
+  name_template: checksums.txt
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+# Release notes come from CHANGELOG.md (passed with --release-notes by the
+# release workflow), not from commit messages.
+changelog:
+  disable: true
+
+release:
+  # Tags like v0.2.0-rc.1 become GitHub pre-releases.
+  prerelease: auto

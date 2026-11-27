@@ -28,6 +28,9 @@ helm-values-tidy [-f values.yaml ...] [--version V] [--repo URL] [-o text|json] 
 | `testdata/parent` | Test chart with an aliased subchart (`child` as `db`) |
 | `testdata/values.yaml` | Values exercising every rule; comments mark expected results |
 | `testdata/nginx-values.yaml` | Values for `make demo-remote` (bitnami/nginx at `REMOTE_VERSION`); comments mark expected results |
+| `.goreleaser.yaml` | Prebuilt binaries for releases (linux/darwin/windows × amd64/arm64); `main.version` set via ldflags |
+| `.github/workflows/release.yml` | On `v*` tags: reruns `ci.yml`, runs GoReleaser, attests build provenance |
+| `scripts/release-notes.sh` | Extracts a version's `CHANGELOG.md` section as release notes |
 
 ## Commands
 
@@ -42,6 +45,10 @@ Use the Makefile (`make help` lists everything):
   comments. If you bump the version, re-check the comments and the README
   "Example" section, which shows this output.
 - `make build` – binary in `bin/`
+- `make snapshot` / `make release-check` – GoReleaser dry run into `dist/` /
+  config validation (GoReleaser pinned via `GORELEASER_VERSION`, keep in sync
+  with `release.yml`)
+- `make release-notes VERSION=X.Y.Z` – the release notes for a version
 
 ## Comparison rules (keep these stable)
 
@@ -73,6 +80,7 @@ Use the Makefile (`make help` lists everything):
   comments updated if the demo output changes.
 - User-visible changes (flags, comparison rules, output) get an entry under
   `## [Unreleased]` in `CHANGELOG.md` (Keep a Changelog sections: Added,
-  Changed, Fixed, Removed). On release, rename it to the version and date.
+  Changed, Fixed, Removed). Releasing is described in the README
+  ("Releasing"); don't tag or push releases unless asked.
 - Match existing style: small packages, doc comments on exported identifiers,
   no extra dependencies without good reason.

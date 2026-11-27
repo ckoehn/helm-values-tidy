@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   e.g. `--free-form '*.labels'`.
 - `-V, --tool-version` prints the helm-values-tidy version (`--version` is
   already the chart version). The version is also shown in `--help`.
+- Prebuilt binaries for Linux, macOS and Windows (amd64 and arm64) attached to
+  each GitHub release, with checksums and build provenance attestations.
 
 ### Changed
 

@@ -14,6 +14,33 @@ It works with local and remote charts and understands subcharts, aliases and glo
 
 ## Installation
 
+### Prebuilt binaries
+
+Download the archive for your platform (Linux, macOS or Windows; amd64 or arm64)
+from the [releases page](https://github.com/ckoehn/helm-values-tidy/releases),
+unpack it and put `helm-values-tidy` somewhere on your `PATH`. For example:
+
+```sh
+VERSION=0.1.0 OS=linux ARCH=amd64   # OS: linux or darwin, ARCH: amd64 or arm64
+curl -fsSLO "https://github.com/ckoehn/helm-values-tidy/releases/download/v${VERSION}/helm-values-tidy_${VERSION}_${OS}_${ARCH}.tar.gz"
+tar -xzf "helm-values-tidy_${VERSION}_${OS}_${ARCH}.tar.gz" helm-values-tidy
+sudo install helm-values-tidy /usr/local/bin/
+```
+
+Each release has a `checksums.txt` and build provenance attestations, so you can
+check a download before using it:
+
+```sh
+sha256sum --ignore-missing -c checksums.txt        # macOS: shasum -a 256 --ignore-missing -c checksums.txt
+gh attestation verify helm-values-tidy_*.tar.gz --repo ckoehn/helm-values-tidy
+```
+
+The macOS binaries aren't signed by Apple. If you downloaded one with a browser and
+macOS refuses to run it, remove the quarantine flag:
+`xattr -d com.apple.quarantine helm-values-tidy`.
+
+### With Go
+
 Requires Go 1.27 or newer.
 
 ```sh
@@ -151,6 +178,7 @@ make cover       # tests with coverage summary
 make demo        # run against the bundled test chart (with DEMO_FLAGS)
 make demo-remote # run against a pinned bitnami/nginx (needs network)
 make build       # binary in ./bin
+make snapshot    # release archives in ./dist (GoReleaser dry run)
 ```
 
 `testdata/parent` is a small chart with an aliased subchart, and
@@ -164,9 +192,35 @@ see the same file without them.
 (`--free-form service.ports`). That file's comments describe the expected
 results for that chart version. When you bump `REMOTE_VERSION`, re-check them and the
 "Example" output above.
+
 See [CHANGELOG.md](CHANGELOG.md) for notable changes and
 [AGENTS.md](AGENTS.md) for architecture notes
 and conventions.
+
+### Releasing
+
+Releases are built by the [Release workflow](.github/workflows/release.yml) when a
+`v*` tag is pushed. It reruns CI, builds the binaries with GoReleaser
+([`.goreleaser.yaml`](.goreleaser.yaml)) and publishes a GitHub release whose notes
+are the version's section from `CHANGELOG.md`.
+
+1. Run `make check`, `make demo`, `make demo-remote` and `make snapshot`, and try a
+   binary from `dist/`.
+2. In `CHANGELOG.md`, rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD`, add a
+   new empty `## [Unreleased]` above it and update the links at the bottom.
+   `make release-notes VERSION=X.Y.Z` shows what the release page will say (the
+   workflow fails if that section is missing).
+3. Commit, push to `main` and wait for CI.
+4. Tag and push: `git tag -a vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`.
+5. Check the release page, `go install github.com/ckoehn/helm-values-tidy@vX.Y.Z`
+   and `helm-values-tidy -V`.
+
+If the workflow fails, delete the tag (`git push --delete origin vX.Y.Z` and
+`git tag -d vX.Y.Z`) and any partial release, fix the problem and tag again. Tags
+like `vX.Y.Z-rc.1` are published as pre-releases.
+
+When bumping GoReleaser, change `GORELEASER_VERSION` in the Makefile and `version`
+in the workflow together.
 
 ## License
 
