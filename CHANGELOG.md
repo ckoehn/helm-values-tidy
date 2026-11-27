@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-27
+
 ### Added
 
 - Report values that equal the chart default (**redundant**) and keys the chart
@@ -25,12 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   already the chart version). The version is also shown in `--help`.
 - Prebuilt binaries for Linux, macOS and Windows (amd64 and arm64) attached to
   each GitHub release, with checksums and build provenance attestations.
+- Standard command-line flags: short flags take one dash (`-f`, `-o`, `-V`) and
+  long flags two (`--values`, `--output`, `--version`, `--repo`). Flags may also
+  come after `CHART`.
 
-### Changed
-
-- Command-line flags follow the usual convention: short flags take one dash (`-f`,
-  `-o`) and long flags take two (`--values`, `--output`, `--version`, `--repo`).
-  Flags may also come after `CHART`. The single-dash long forms (e.g. `-values`) are
-  no longer accepted.
-
-[Unreleased]: https://github.com/ckoehn/helm-values-tidy/commits/main
+[Unreleased]: https://github.com/ckoehn/helm-values-tidy/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/ckoehn/helm-values-tidy/releases/tag/v0.1.0
