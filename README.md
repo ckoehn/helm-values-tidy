@@ -39,10 +39,12 @@ helm-values-tidy [flags] CHART
   -o, --output FMT      text (default) or json
       --free-form PATH  treat PATH as a free-form map: keys at or below it are
                         never unknown (repeatable, * matches one key)
+  -V, --tool-version    print the helm-values-tidy version and exit
 ```
 
 Short flags take one dash (`-f`), long flags two (`--values`). Flags may also
-come after `CHART`.
+come after `CHART`. `--version` is the *chart* version; use `-V` for the version
+of helm-values-tidy itself.
 
 `CHART` can be anything `helm install` accepts:
 

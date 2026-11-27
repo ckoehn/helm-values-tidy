@@ -5,7 +5,9 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
+	"runtime/debug"
 
 	flag "github.com/spf13/pflag"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -16,24 +18,30 @@ import (
 	"github.com/ckoehn/helm-values-tidy/internal/report"
 )
 
+// version is set at build time by release builds with
+// -ldflags "-X main.version=v1.2.3". When empty, it is taken from the module
+// build info (see toolVersion).
+var version string
+
 func main() {
-	if err := run(os.Args[1:]); err != nil {
+	if err := run(os.Args[1:], os.Stdout); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
 }
 
-func run(args []string) error {
+func run(args []string, stdout io.Writer) error {
 	fs := flag.NewFlagSet("helm-values-tidy", flag.ContinueOnError)
 	fs.SortFlags = false
 	fs.Usage = func() {
-		_, _ = fmt.Fprint(os.Stderr, "Usage: helm-values-tidy [flags] CHART\n\n"+
-			"CHART is a local directory, a .tgz, repo/name, a URL or oci://...\n\nFlags:\n")
+		_, _ = fmt.Fprintf(os.Stderr, "helm-values-tidy %s\n\nUsage: helm-values-tidy [flags] CHART\n\n"+
+			"CHART is a local directory, a .tgz, repo/name, a URL or oci://...\n\nFlags:\n", toolVersion())
 		fs.PrintDefaults()
 	}
 	var (
 		valueFiles []string
 		version    string
+		printVer   bool
 		repoURL    string
 		output     string
 		freeForm   []string
@@ -43,11 +51,16 @@ func run(args []string) error {
 	fs.StringVar(&repoURL, "repo", "", "chart repository `URL`")
 	fs.StringVarP(&output, "output", "o", "text", "output `format`: text or json")
 	fs.StringArrayVar(&freeForm, "free-form", nil, "treat `PATH` as a free-form map: keys at or below it are never unknown\n(repeatable, * matches one key, e.g. '*.labels')")
+	fs.BoolVarP(&printVer, "tool-version", "V", false, "print the helm-values-tidy version and exit")
 
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return nil
 		}
+		return err
+	}
+	if printVer {
+		_, err := fmt.Fprintln(stdout, "helm-values-tidy", toolVersion())
 		return err
 	}
 	if fs.NArg() != 1 {
@@ -85,9 +98,27 @@ func run(args []string) error {
 	}
 	r := report.New(c.Name()+"@"+c.Metadata.Version, findings)
 	if output == "json" {
-		return report.WriteJSON(os.Stdout, r)
+		return report.WriteJSON(stdout, r)
 	}
-	return report.WriteText(os.Stdout, r)
+	return report.WriteText(stdout, r)
+}
+
+// toolVersion returns the version of this binary: the one set with -ldflags,
+// else the module version recorded by the Go toolchain (set by
+// `go install ...@v1.2.3`, or derived from VCS for local builds), else "dev".
+func toolVersion() string {
+	info, _ := debug.ReadBuildInfo()
+	return resolveVersion(version, info)
+}
+
+func resolveVersion(ldflags string, info *debug.BuildInfo) string {
+	if ldflags != "" {
+		return ldflags
+	}
+	if info != nil && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	return "dev"
 }
 
 // mergeOver deep-merges src into dst, with src winning, like Helm does for

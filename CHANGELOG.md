@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   default isn't empty. Keys at or below it are never unknown, but values that equal
   the default are still reported as redundant. A `*` segment matches any single key,
   e.g. `--free-form '*.labels'`.
+- `-V, --tool-version` prints the helm-values-tidy version (`--version` is
+  already the chart version). The version is also shown in `--help`.
 
 ### Changed
 
